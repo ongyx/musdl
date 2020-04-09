@@ -14,6 +14,14 @@ Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issue
 ## Requirements
 See `requirements.txt`.
 
+## Hacking
+```
+git clone https://github.com/onyxware/musdl
+cd musdl
+# activate a virtualenv if you want
+pip install -r requirements.txt
+```
+
 ## Install
 `pip install musdl`
 
