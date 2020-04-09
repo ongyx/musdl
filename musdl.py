@@ -72,7 +72,7 @@ def download_score(format, url):
 
 def main(args=None):
     if args == None:
-        args = sys.argv
+        args = sys.argv[1:]
     parser = argparse.ArgumentParser(
         prog="musdl",
         description=__doc__,
