@@ -20,6 +20,7 @@ git clone https://github.com/onyxware/musdl
 cd musdl
 # activate a virtualenv if you want
 pip install -r requirements.txt
+python3 setup.py install
 ```
 
 ## Install
