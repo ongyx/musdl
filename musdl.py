@@ -45,23 +45,14 @@ def download_score(format, url):
         re_score = REGEXES[format]
 
     try:
-        soup = bsoup.BeautifulSoup(
-            requests.get(url).content,
-            "html5lib"
-        )
+        soup = bsoup.BeautifulSoup(requests.get(url).content, "html5lib")
     except requests.ConnectionError as e:
         raise DownloadError("could not get website data: " + str(e))
-    
+
     # urls for scores are stored in a js-store class, there is only one per page
-    class_content = str(
-        soup.find_all(
-            "div", {"class": "js-store"}
-        )[0]
-    )
-    score_data_url = re.findall(
-        re_score, class_content
-    )[0]
-    
+    class_content = str(soup.find_all("div", {"class": "js-store"})[0])
+    score_data_url = re.findall(re_score, class_content)[0]
+
     try:
         score_data = requests.get(score_data_url)
     except requests.ConnectionError as e:
@@ -73,50 +64,41 @@ def download_score(format, url):
 def main(args=None):
     if args == None:
         args = sys.argv[1:]
-    parser = argparse.ArgumentParser(
-        prog="musdl",
-        description=__doc__,
-    )
-    
+    parser = argparse.ArgumentParser(prog="musdl", description=__doc__)
+
     parser.add_argument(
-        "-V", "--version",
+        "-V",
+        "--version",
         help="print version",
         action="version",
-        version="%(prog)s v{}".format(
-            __version__
-        )
+        version="%(prog)s v{}".format(__version__),
     )
-    
+
     parser.add_argument(
-        "-f", "--format",
-        choices=[
-            "midi",
-            "mp3",
-        ],
+        "-f",
+        "--format",
+        choices=["midi", "mp3"],
         default="mp3",
         help="format to download, defaults to mp3",
         action="store",
     )
-    
+
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="file to output the score to, otherwise stdout",
         action="store",
     )
-    
-    parser.add_argument(
-        "url",
-        help="url of the score",
-        action="store",
-    )
+
+    parser.add_argument("url", help="url of the score", action="store")
     options = parser.parse_args(args)
-    
+
     score_data = download_score(options.format, options.url)
-    
+
     if options.output:
         with open(options.output, mode="wb") as f:
             f.write(score_data)
-    
+
     else:
         print(score_data)
 
