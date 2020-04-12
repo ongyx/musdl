@@ -18,7 +18,10 @@ __license__ = "MIT"
 REGEXES = {
     "midi": r"http[s]?://musescore.com/static/musescore/scoredata/gen/[a-zA-Z0-9/]*score\.mid",
     "mp3": r"http[s]?://nocdn.musescore.com/static/musescore/scoredata/gen/[a-zA-Z0-9/]*score\.mp3",
+    "mxl": r"http[s]?://nocdn.musescore.com/static/musescore/scoredata/gen/[a-zA-Z0-9/]*score\.mp3",
 }
+
+ALLOWED_FORMATS = ["mp3", "midi", "mxl"]
 
 
 class DownloadError(Exception):
@@ -39,7 +42,7 @@ def download_score(format, url):
     """
     if "musescore.com" not in url:
         raise DownloadError("not a musescore url")
-    elif format not in ("midi", "mp3"):
+    elif format not in ALLOWED_FORMATS:
         raise DownloadError("format must be mid or mp3")
     else:
         re_score = REGEXES[format]
@@ -52,6 +55,11 @@ def download_score(format, url):
     # urls for scores are stored in a js-store class, there is only one per page
     class_content = str(soup.find_all("div", {"class": "js-store"})[0])
     score_data_url = re.findall(re_score, class_content)[0]
+
+    # The URL for the mxl file is not present in the downloaded html page and it is
+    # built from the mp3 URL
+    if format == "mxl":
+        score_data_url = re.sub(r"\.mp3$", ".mxl", score_data_url, flags=re.IGNORECASE)
 
     try:
         score_data = requests.get(score_data_url)
@@ -77,7 +85,7 @@ def main(args=None):
     parser.add_argument(
         "-f",
         "--format",
-        choices=["midi", "mp3"],
+        choices=ALLOWED_FORMATS,
         default="mp3",
         help="format to download, defaults to mp3",
         action="store",
