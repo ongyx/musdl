@@ -27,4 +27,4 @@ python3 setup.py install
 `pip install musdl`
 
 ## License
-MIT
+[MIT](/LICENSE)
