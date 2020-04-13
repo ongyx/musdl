@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="musdl",
-    version="1.0.0",
+    version="1.1.0",
     author="Ong Yong Xin",
     author_email="ongyongxin.offical@gmail.com",
     description="Musescore downloader written in Python",
