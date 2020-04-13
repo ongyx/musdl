@@ -10,9 +10,9 @@ import sys
 import bs4 as bsoup
 import requests
 
-__author__ = "Ong Yong Xin"
-__version__ = "1.0.0"
-__copyright__ = "(c) 2020 Ong Yong Xin"
+__author__ = "Ong Yong Xin, JPFrancoia"
+__version__ = "1.1.0"
+__copyright__ = "(c) 2020 Ong Yong Xin, JPFrancoia"
 __license__ = "MIT"
 
 REGEXES = {
