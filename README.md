@@ -28,3 +28,11 @@ python3 setup.py install
 
 ## License
 [MIT](/LICENSE)
+
+## Changelog
+
+### 1.1.0
+Added MusicXML download option, thanks to [JPFrancoia](https://github.com/JPFrancoia) for the update!
+
+### 1.0.0
+Initial version.
