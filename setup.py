@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="musdl",
-    version="1.1.0",
+    version="1.1.1",
     author="Ong Yong Xin",
     author_email="ongyongxin.offical@gmail.com",
     description="Musescore downloader written in Python",
@@ -23,4 +23,8 @@ setuptools.setup(
         musdl=musdl:main
     """,
     python_requires='>=3.5',
+    install_requires=[
+        "beautifulsoup4",
+        "requests",
+    ],
 )

@@ -1,0 +1,8 @@
+README.md
+musdl.py
+setup.py
+musdl.egg-info/PKG-INFO
+musdl.egg-info/SOURCES.txt
+musdl.egg-info/dependency_links.txt
+musdl.egg-info/entry_points.txt
+musdl.egg-info/top_level.txt
