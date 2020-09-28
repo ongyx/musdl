@@ -1,5 +1,7 @@
 # musdl
 
+![logo](https://raw.githubusercontent.com/ongyx/musdl/master/logo.jpg "musdl")
+
 # NOTE:
 _**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of mudl.**_
 
