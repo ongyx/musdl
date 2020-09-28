@@ -12,24 +12,31 @@ See the [original](https://github.com/Xmader/musescore-downloader) Javascript ve
 Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issues/5) in the (same) Javascript downloader repo.
 
 ## Requirements
-See `requirements.txt`.
+- `requests` - Downloader.
+- `beautifulsoup4` - Powerful HTML parser.
 
 ## Hacking
+
+All my python projects now use [flit](https://pypi.org/project/flit) to build and publish.
+So you need to `python3 -m pip install flit` first.
+
 ```
 git clone https://github.com/onyxware/musdl
 cd musdl
-# activate a virtualenv if you want
-pip install -r requirements.txt
-python3 setup.py install
+flit build
 ```
 
 ## Install
-`pip install musdl`
+`(python3 -m) pip install musdl`
 
 ## License
 [MIT](/LICENSE)
 
 ## Changelog
+
+### 1.1.2
+Version bump, use Flit to build instead of `setup.py`.
+Updated README too.
 
 ### 1.1.0
 Added MusicXML download option, thanks to [JPFrancoia](https://github.com/JPFrancoia) for the update!

@@ -1,4 +1,0 @@
-
-        [console_scripts]
-        musdl=musdl:main
-    

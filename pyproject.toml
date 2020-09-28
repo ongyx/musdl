@@ -1,0 +1,23 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "musdl"
+author = "Ong Yong Xin"
+author-email = "ongyongxin2020+github@gmail.com"
+home-page = "https://github.com/ongyx/musdl"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+description-file = "README.md"
+requires = [
+    "requests>=2.24.0",
+    "beautifulsoup4>=4.9.2",
+]
+requires-python = ">=3.6"
+
+[tool.flit.scripts]
+musdl = "musdl:main"
