@@ -3,9 +3,17 @@
 ![logo](https://raw.githubusercontent.com/ongyx/musdl/master/logo.jpg "musdl")
 
 # NOTE:
-_**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of mudl.**_
+_**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**_
 
 musdl (Musescore Downloader) is a Python script that I wrote to make it easier to download scores from Musescore.
+It is meant to be used as a command-line tool, but can also be imported and used as a module:
+
+```python
+from musdl import Score
+
+my_score = Score(...)  # the Musescore url goes here
+data = my_score.download("mp3")  # download as mp3, returns as bytes
+```
 
 ## Why?
 See the [original](https://github.com/Xmader/musescore-downloader) Javascript version for more infomation.
@@ -32,9 +40,14 @@ flit build
 `(python3 -m) pip install musdl`
 
 ## License
-[MIT](/LICENSE)
+MIT.
 
 ## Changelog
+
+### 2.0.0
+Added `-O` option to use the score's title as the output filename (y'know, like `curl -O`).
+Refactored code to be object-oriented, in the form of the `Score` class. This should make adding new features easier.
+(Plus, you can use `musdl` more programmatically!)
 
 ### 1.1.2
 Version bump, use Flit to build instead of `setup.py`.
