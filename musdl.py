@@ -10,7 +10,7 @@ import bs4 as bsoup
 import requests
 
 __author__ = "Ong Yong Xin, JPFrancoia"
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 __copyright__ = "(c) 2020 Ong Yong Xin, JPFrancoia"
 __license__ = "MIT"
 
