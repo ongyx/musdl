@@ -14,8 +14,9 @@ classifiers = [
 ]
 description-file = "README.md"
 requires = [
+    "beautifulsoup4>=4.9.2",
+    "fpdf>=1.7.2",
     "requests>=2.24.0",
-    "beautifulsoup4[html5lib]>=4.9.2",
 ]
 requires-python = ">=3.6"
 

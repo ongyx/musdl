@@ -24,6 +24,7 @@ Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issue
 ## Requirements
 - `requests` - Downloader.
 - `beautifulsoup4` - Powerful HTML parser.
+- `fpdf` - Create pdfs
 
 ## Hacking
 
@@ -39,10 +40,20 @@ flit build
 ## Install
 `(python3 -m) pip install musdl`
 
+If you want to download PDFs, you have to install `inkscape` first to convert the svg files into pngs (that can be added by fpdf).
+On Linux, you can just install using your package manager:
+
+`(package manager) install/add inkscape`
+
+On Windows, go [here](https://inkscape.org) to install inkscape first (although I have not tested Windows support yet).
+
 ## License
 MIT.
 
 ## Changelog
+
+### 2.1.0
+Added PDF support. Tested on Linux (but not on Windows yet), requires Inkscape to work.
 
 ### 2.0.0
 Added `-O` option to use the score's title as the output filename (y'know, like `curl -O`).
