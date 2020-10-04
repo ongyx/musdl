@@ -45,8 +45,8 @@ MIT.
 
 ## Changelog
 
-### 2.1.0
-Added PDF support. Tested on Linux (but not on Windows yet), requires Inkscape to work.
+### 2.1.1
+Added PDF support.
 
 ### 2.0.0
 Added `-O` option to use the score's title as the output filename (y'know, like `curl -O`).
