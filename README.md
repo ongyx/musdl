@@ -40,13 +40,6 @@ flit build
 ## Install
 `(python3 -m) pip install musdl`
 
-If you want to download PDFs, you have to install `inkscape` first to convert the svg files into pngs (that can be added by fpdf).
-On Linux, you can just install using your package manager:
-
-`(package manager) install/add inkscape`
-
-On Windows, go [here](https://inkscape.org) to install inkscape first (although I have not tested Windows support yet).
-
 ## License
 MIT.
 

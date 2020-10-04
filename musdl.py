@@ -16,7 +16,7 @@ import fpdf
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -30,6 +30,7 @@ PDF_RES = [2100, 2970]
 
 # logging stuff
 _log = logging.getLogger("musdl")
+logging.basicConfig()
 _log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
 
 
@@ -149,7 +150,7 @@ class Score(object):
         
         return f"{self.baseurl}score.{format}"
     
-    def _as_pdf(self, pdf_scale):
+    def _as_pdf(self):
         # pdf is made of a few images
         pdf = fpdf.FPDF()
         
@@ -158,24 +159,20 @@ class Score(object):
         page = 0
         
         while True:
-            svg = temp / f"{page}.svg"
             png = temp / f"{page}.png"
             
-            _log.info(f"downloading page ({page}.svg)")
-            svg_data = requests.get(f"{self.baseurl}score_{page}.svg")
+            _log.info(f"downloading page ({page}.png)")
+            png_data = requests.get(f"{self.baseurl}score_{page}.png")
             
-            if svg_data.status_code == 404:
+            if png_data.status_code == 404:
                 _log.info(f"{page} page(s) downloaded")
                 break
             
-            elif not svg_data.ok:
+            elif not png_data.ok:
                 raise DownloadError(f"could not get score pdf page #{page}: {e}")
             
-            with open(svg, "wb") as f:
-                f.write(svg_data.content)
-            
-            _log.info(f"converting {page}.svg to png")
-            _convert_svg_to_png(svg, png, pdf_scale)
+            with open(png, "wb") as f:
+                f.write(png_data.content)
             
             _log.info(f"adding {page}.png to pdf")
             pdf.add_page()
@@ -188,14 +185,12 @@ class Score(object):
         tempdir.cleanup()
         return data
                 
-    def download(self, format, pdf_scale=PDF_RES):
+    def download(self, format):
         """Get the score's data.
         
         Args:
             format (str): The format to download in.
                 Must be in ALLOWED_FORMATS.
-            pdf_scale (list): If the format is 'pdf', how high the resolution of the pdf should be.
-                Defaults to PDF_RES.
         
         Returns:
             The score's data, as bytes.
@@ -207,7 +202,7 @@ class Score(object):
         _log.info(f"downloding score as format '{format}'")
         
         if format == "pdf":
-            return self._as_pdf(PDF_RES)
+            return self._as_pdf()
         
         try:
             score_data = requests.get(self.get_url(format))
@@ -248,15 +243,6 @@ def main(args=None):
         help="format to download, defaults to mp3",
         action="store"
     )
-    
-    parser.add_argument(
-        "-s",
-        "--scale",
-        default=5,
-        help=f"scale to render PDF at (1x resolution: width={PDF_RES[0]}, height={PDF_RES[1]}), defaults to 5",
-        action="store",
-        type=int
-    )
 
     parser.add_argument(
         "-o",
@@ -280,9 +266,7 @@ def main(args=None):
     )
 
     score = Score(options.url)
-    
-    scale = [r * options.scale for r in PDF_RES]
-    score_data = score.download(options.format, pdf_scale=scale)
+    score_data = score.download(options.format)
     
     if options.remote_name:
         filename = f"{sanitize_filename(score.name)}.{options.format}"
