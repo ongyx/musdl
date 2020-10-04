@@ -26,7 +26,7 @@ RE_BASEURL = re.compile(r"(http[s]?://musescore.com/static/musescore/scoredata/g
 
 # only here for backwards compatibility
 ALLOWED_FORMATS = frozenset(["mid", "mp3", "mxl", "pdf"])
-PDF_RES = [210, 297]
+PDF_RES = [2100, 2970]
 
 # logging stuff
 _log = logging.getLogger("musdl")
