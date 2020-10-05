@@ -16,7 +16,7 @@ import fpdf
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -28,7 +28,7 @@ RE_BASEURL = re.compile(
 
 # only here for backwards compatibility
 ALLOWED_FORMATS = frozenset(["mid", "mp3", "mxl", "pdf"])
-PDF_RES = [2100, 2970]
+PDF_RES = [210, 297]
 
 # logging stuff
 _log = logging.getLogger("musdl")
@@ -60,8 +60,8 @@ def sanitize_filename(name):
     return re.sub("_{2,}", "_", sanitised)
 
 
-def _find_inkscape():
-    args = ["which", "inkscape"]
+def _find_imagemagick():
+    args = ["which", "magick"]
 
     if os.name == "nt":
         args[0] = "where"
@@ -75,28 +75,22 @@ def _find_inkscape():
 def _convert_svg_to_png(svg_path, png_path, wh):
 
     width, height = wh
-    inkscape_path = _find_inkscape()
+    magick_path = _find_imagemagick()
 
-    if inkscape_path is None:
-        raise RuntimeError("inkscape not found: please install first")
+    if magick_path is None:
+        raise RuntimeError("imagemagick not found: please install first")
 
     args = [
-        inkscape_path,
-        "--without-gui",
-        "-f",
+        magick_path,
         svg_path,
-        "--export-area-page",
-        "-w",
-        str(width),
-        "-h",
-        str(height),
-        f"--export-png={png_path}",
+        "-size", f"{width}x{height}",
+        f"PNG8:{png_path}"  # 8-bit, fpdf does noy support 16-bit pngs
     ]
 
     try:
         subprocess.run(args, check=True)
     except subprocess.CalledProcessError:
-        raise RuntimeError("failed to run inkscape: exited with non-zero status code")
+        raise RuntimeError("failed to run imagemagick: exited with non-zero status code")
 
 
 class Score(object):
@@ -155,30 +149,35 @@ class Score(object):
     def _as_pdf(self):
         # pdf is made of a few images
         pdf = fpdf.FPDF()
+        width, height = PDF_RES
 
         tempdir = tempfile.TemporaryDirectory()
         temp = pathlib.Path(tempdir.name)
         page = 0
 
         while True:
+            svg = temp / f"{page}.svg"
             png = temp / f"{page}.png"
 
-            _log.info(f"downloading page ({page}.png)")
-            png_data = requests.get(f"{self.baseurl}score_{page}.png")
+            _log.info(f"downloading page ({page}.svg)")
+            svg_data = requests.get(f"{self.baseurl}score_{page}.svg")
 
-            if png_data.status_code == 404:
+            if svg_data.status_code == 404:
                 _log.info(f"{page} page(s) downloaded")
                 break
 
-            elif not png_data.ok:
+            elif not svg_data.ok:
                 raise DownloadError(f"could not get score pdf page #{page}: {e}")
 
-            with open(png, "wb") as f:
-                f.write(png_data.content)
+            with open(svg, "wb") as f:
+                f.write(svg_data.content)
+
+            _log.info("converting svg to png")
+            _convert_svg_to_png(svg, png, PDF_RES)
 
             _log.info(f"adding {page}.png to pdf")
             pdf.add_page()
-            pdf.image(str(png), x=0, y=0, w=210, h=297)
+            pdf.image(str(png), x=0, y=0, w=width, h=height)
 
             page += 1
 

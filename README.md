@@ -25,6 +25,7 @@ Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issue
 - `requests` - Downloader.
 - `beautifulsoup4` - Powerful HTML parser.
 - `fpdf` - Create pdfs
+- `imagemagick` - Convert svgs to pngs.
 
 ## Hacking
 
@@ -39,6 +40,12 @@ flit build
 
 ## Install
 `(python3 -m) pip install musdl`
+If you want to download PDFs, install [ImageMagick](https://imagemagick.org/index.php) first.
+On Linux distributions, you can just install using your package manager, i.e
+
+`apt install imagemagick`
+
+PDF support has been tested on Termux as well, but not Windows yet. (It _should_ work.)
 
 ## License
 MIT.
