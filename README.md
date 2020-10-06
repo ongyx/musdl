@@ -5,7 +5,8 @@
 # NOTE:
 _**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**_
 
-musdl (Musescore Downloader) is a Python script that I wrote to make it easier to download scores from Musescore.
+musdl ([mus]score [d]own[l]oader) is a Python script that I wrote to make downloading scores from Musescore easy.
+
 It is meant to be used as a command-line tool, but can also be imported and used as a module:
 
 ```python
@@ -16,14 +17,16 @@ data = my_score.download("mp3")  # download as mp3, returns as bytes
 ```
 
 ## Why?
-See the [original](https://github.com/Xmader/musescore-downloader) Javascript version for more infomation.
+musdl was inspired by [musescore-downloader](https://github.com/Xmader/musescore-downloader), which is written in TypeScript. But, what if you wanted to run it without a web browser? That's why I made a Python equivalent.
 
-## takedown request something something
-Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issues/5) in the (same) Javascript downloader repo.
+## **cough cough** takedown request something something **cough cough**
+Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issues/5) in the same repo.
 
 ## Requirements
 - `requests` - Downloader.
 - `beautifulsoup4` - Powerful HTML parser.
+
+For downloading PDFs:
 - `reportlab` - Make PDFs.
 - `svglib` - Convert SVGs into Reportlab drawings.
 
@@ -41,10 +44,17 @@ flit build
 ## Install
 `(python3 -m) pip install musdl`
 
+If you want to download PDFs, you need to install the `pdf` extra:
+
+`(python3 -m) pip install musdl[pdf]`
+
 ## License
 MIT.
 
 ## Changelog
+
+### 2.2.1
+Made PDF downloading a extra feature (because `svglib` and `reportlab` dependencies are not pure-Python).
 
 ### 2.2.0
 Fixed PDF support for Windows. Now musdl uses `svglib` as the backend for adding SVGs to PDFs.

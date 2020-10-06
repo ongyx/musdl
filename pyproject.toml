@@ -15,11 +15,15 @@ classifiers = [
 description-file = "README.md"
 requires = [
     "beautifulsoup4>=4.9.2",
-    "svglib>=1.0.1",
-    "reportlab>=3.5.53",
     "requests>=2.24.0",
 ]
 requires-python = ">=3.6"
+
+[tool.flit.metadata.requires-extra]
+pdf = [
+    "svglib>=1.0.1",
+    "reportlab>=3.5.53",
+]
 
 [tool.flit.scripts]
 musdl = "musdl:main"

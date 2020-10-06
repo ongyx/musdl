@@ -1,5 +1,5 @@
 # coding: utf-8
-"""Pure Python score downloader for Musescore."""
+"""[mus]escore [d]own[l]oader, ported from TypeScript"""
 
 import argparse
 import io
@@ -13,12 +13,16 @@ import sys
 import bs4 as bsoup
 import requests
 
-from svglib import svglib
-import reportlab.pdfgen.canvas as rlab_canvas
-import reportlab.graphics.renderPDF as rlab_pdf
+try:
+    from svglib import svglib
+    import reportlab.pdfgen.canvas as rlab_canvas
+    import reportlab.graphics.renderPDF as rlab_pdf
+    _PDF = True
+except ImportError:
+    _PDF = False
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -85,6 +89,8 @@ class Score(object):
         except requests.ConnectionError as e:
             raise DownloadError("could not get website data: " + str(e))
 
+        _log.info("parsing score")
+
         self.soup = bsoup.BeautifulSoup(webpage, "html.parser")
         self.name = self.soup.find("meta", property="og:title")["content"]
 
@@ -115,6 +121,9 @@ class Score(object):
         return f"{self.baseurl}score.{format}"
 
     def _as_pdf(self):
+        if not _PDF:
+            raise RuntimeError("PDF extra not installed: install with 'pip install musdl[pdf]")
+
         temp = tempfile.TemporaryDirectory()
         tempdir = pathlib.Path(temp.name)
         
