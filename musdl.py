@@ -1,6 +1,5 @@
 # coding: utf-8
-"""musdl: Pure Python score downloader for
-Musescore."""
+"""Pure Python score downloader for Musescore."""
 
 import argparse
 import io
@@ -14,17 +13,12 @@ import sys
 import bs4 as bsoup
 import requests
 
-try:
-    # pdf extras
-    import reportlab.platypus as rlab
-    import reportlab.lib.pagesizes as rlab_pagesizes
-    from svglib import svglib
-    _PDF = True
-except ImportError:
-    _PDF = False
+from svglib import svglib
+import reportlab.pdfgen.canvas as rlab_canvas
+import reportlab.graphics.renderPDF as rlab_pdf
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.1.2"
+__version__ = "2.2.0"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -124,9 +118,8 @@ class Score(object):
         temp = tempfile.TemporaryDirectory()
         tempdir = pathlib.Path(temp.name)
         
-        pdf_buffer = io.BytesIO()
-        pdf = rlab.SimpleDocTemplate(pdf_buffer, pagesize=rlab_pagesizes.A4)
-        pdf_pages = []
+        buffer = io.BytesIO()
+        pdf = rlab_canvas.Canvas(buffer)
         
         page = 0
 
@@ -146,19 +139,19 @@ class Score(object):
             with svg.open(mode="wb") as f:
                 f.write(svg_data.content)
 
-            _log.info("converting svg to png")
+            _log.info("rendering svg")
             drawing = svglib.svg2rlg(str(svg))
 
             _log.info(f"adding {page}.png to pdf")
-            pdf_pages.append(drawing)
-            pdf_pages.append(rlab.PageBreak())
+            rlab_pdf.draw(drawing, pdf, 0, 0)
+            pdf.showPage()
 
             page += 1
 
         _log.info(f"building pdf file")
-        pdf.build(pdf_pages)
+        pdf.save()
         temp.cleanup()
-        return pdf_buffer.getvalue()
+        return buffer.getvalue()
 
     def download(self, format):
         """Get the score's data.
