@@ -3,17 +3,25 @@
 Musescore."""
 
 import argparse
+import io
 import re
 import logging
 import os
 import pathlib
 import tempfile
-import subprocess
 import sys
 
 import bs4 as bsoup
-import fpdf
 import requests
+
+try:
+    # pdf extras
+    import reportlab.platypus as rlab
+    import reportlab.lib.pagesizes as rlab_pagesizes
+    from svglib import svglib
+    _PDF = True
+except ImportError:
+    _PDF = False
 
 __author__ = "Ong Yong Xin"
 __version__ = "2.1.2"
@@ -28,7 +36,6 @@ RE_BASEURL = re.compile(
 
 # only here for backwards compatibility
 ALLOWED_FORMATS = frozenset(["mid", "mp3", "mxl", "pdf"])
-PDF_RES = [210, 297]
 
 # logging stuff
 _log = logging.getLogger("musdl")
@@ -58,39 +65,6 @@ def sanitize_filename(name):
 
     # remove duplicate underscores
     return re.sub("_{2,}", "_", sanitised)
-
-
-def _find_imagemagick():
-    args = ["which", "magick"]
-
-    if os.name == "nt":
-        args[0] = "where"
-
-    try:
-        return subprocess.check_output(args).strip()
-    except subprocess.CalledProcessError:
-        return None
-
-
-def _convert_svg_to_png(svg_path, png_path, wh):
-
-    width, height = wh
-    magick_path = _find_imagemagick()
-
-    if magick_path is None:
-        raise RuntimeError("imagemagick not found: please install first")
-
-    args = [
-        magick_path,
-        svg_path,
-        "-size", f"{width}x{height}",
-        f"PNG8:{png_path}"  # 8-bit, fpdf does noy support 16-bit pngs
-    ]
-
-    try:
-        subprocess.run(args, check=True)
-    except subprocess.CalledProcessError:
-        raise RuntimeError("failed to run imagemagick: exited with non-zero status code")
 
 
 class Score(object):
@@ -147,18 +121,18 @@ class Score(object):
         return f"{self.baseurl}score.{format}"
 
     def _as_pdf(self):
-        # pdf is made of a few images
-        pdf = fpdf.FPDF()
-        width, height = PDF_RES
-
-        tempdir = tempfile.TemporaryDirectory()
-        temp = pathlib.Path(tempdir.name)
+        temp = tempfile.TemporaryDirectory()
+        tempdir = pathlib.Path(temp.name)
+        
+        pdf_buffer = io.BytesIO()
+        pdf = rlab.SimpleDocTemplate(pdf_buffer, pagesize=rlab_pagesizes.A4)
+        pdf_pages = []
+        
         page = 0
 
         while True:
-            svg = temp / f"{page}.svg"
-            png = temp / f"{page}.png"
-
+            svg = tempdir / f"{page}.svg"
+            
             _log.info(f"downloading page ({page}.svg)")
             svg_data = requests.get(f"{self.baseurl}score_{page}.svg")
 
@@ -169,22 +143,22 @@ class Score(object):
             elif not svg_data.ok:
                 raise DownloadError(f"could not get score pdf page #{page}: {e}")
 
-            with open(svg, "wb") as f:
+            with svg.open(mode="wb") as f:
                 f.write(svg_data.content)
 
             _log.info("converting svg to png")
-            _convert_svg_to_png(svg, png, PDF_RES)
+            drawing = svglib.svg2rlg(str(svg))
 
             _log.info(f"adding {page}.png to pdf")
-            pdf.add_page()
-            pdf.image(str(png), x=0, y=0, w=width, h=height)
+            pdf_pages.append(drawing)
+            pdf_pages.append(rlab.PageBreak())
 
             page += 1
 
         _log.info(f"building pdf file")
-        data = pdf.output(dest="S").encode("latin-1")
-        tempdir.cleanup()
-        return data
+        pdf.build(pdf_pages)
+        temp.cleanup()
+        return pdf_buffer.getvalue()
 
     def download(self, format):
         """Get the score's data.
