@@ -18,12 +18,13 @@ try:
     import reportlab.lib.pagesizes as rlab_pagesizes
     import reportlab.pdfgen.canvas as rlab_canvas
     import reportlab.graphics.renderPDF as rlab_pdf
+
     _PDF = True
 except ImportError:
     _PDF = False
 
 __author__ = "Ong Yong Xin"
-__version__ = "2020.10.7"
+__version__ = "2.2.2"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -123,20 +124,22 @@ class Score(object):
 
     def _as_pdf(self):
         if not _PDF:
-            raise RuntimeError("PDF extra not installed: install with 'pip install musdl[pdf]")
+            raise RuntimeError(
+                "PDF extra not installed: install with 'pip install musdl[pdf]"
+            )
 
         temp = tempfile.TemporaryDirectory()
         tempdir = pathlib.Path(temp.name)
-        
+
         buffer = io.BytesIO()
         pdf = rlab_canvas.Canvas(buffer)
-        
+
         page = 0
         width, height = rlab_pagesizes.A4
 
         while True:
             svg = tempdir / f"{page}.svg"
-            
+
             _log.info(f"downloading page ({page}.svg)")
             svg_data = requests.get(f"{self.baseurl}score_{page}.svg", stream=True)
 
@@ -145,7 +148,9 @@ class Score(object):
                 break
 
             elif not svg_data.ok:
-                raise DownloadError(f"could not get score pdf page #{page}: {e}")
+                raise DownloadError(
+                    f"could not get score pdf page #{page}: status code {svg_data.status_code}"
+                )
 
             with svg.open(mode="wb") as f:
                 f.write(svg_data.content)

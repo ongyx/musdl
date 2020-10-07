@@ -5,7 +5,7 @@
 # NOTE:
 _**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**_
 
-musdl ([mus]score [d]own[l]oader) is a Python script that I wrote to make downloading scores from Musescore easy.
+musdl (**mus**score **d**own**l**oader) is a Python script that I wrote to make downloading scores from Musescore easy.
 
 It is meant to be used as a command-line tool, but can also be imported and used as a module:
 
@@ -51,11 +51,13 @@ If you want to download PDFs, you need to install the `pdf` extra:
 ## License
 MIT.
 
+## Todo
+- add multiprocessing support (for faster PDF downloads).
+
 ## Changelog
 
-### 2020.10.7
+### 2.2.2
 Fixed PDF scaling issue on Windows.
-Move to date-based versioning.
 
 ### 2.2.1
 Made PDF downloading a extra feature (because `svglib` and `reportlab` dependencies are not pure-Python).
