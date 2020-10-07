@@ -53,6 +53,10 @@ MIT.
 
 ## Changelog
 
+### 2020.10.7
+Fixed PDF scaling issue on Windows.
+Move to date-based versioning.
+
 ### 2.2.1
 Made PDF downloading a extra feature (because `svglib` and `reportlab` dependencies are not pure-Python).
 

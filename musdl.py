@@ -15,6 +15,7 @@ import requests
 
 try:
     from svglib import svglib
+    import reportlab.lib.pagesizes as rlab_pagesizes
     import reportlab.pdfgen.canvas as rlab_canvas
     import reportlab.graphics.renderPDF as rlab_pdf
     _PDF = True
@@ -22,7 +23,7 @@ except ImportError:
     _PDF = False
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.2.1"
+__version__ = "2020.10.7"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -131,12 +132,13 @@ class Score(object):
         pdf = rlab_canvas.Canvas(buffer)
         
         page = 0
+        width, height = rlab_pagesizes.A4
 
         while True:
             svg = tempdir / f"{page}.svg"
             
             _log.info(f"downloading page ({page}.svg)")
-            svg_data = requests.get(f"{self.baseurl}score_{page}.svg")
+            svg_data = requests.get(f"{self.baseurl}score_{page}.svg", stream=True)
 
             if svg_data.status_code == 404:
                 _log.info(f"{page} page(s) downloaded")
@@ -150,6 +152,8 @@ class Score(object):
 
             _log.info("rendering svg")
             drawing = svglib.svg2rlg(str(svg))
+            # scale drawing
+            drawing.scale(width / drawing.width, height / drawing.height)
 
             _log.info(f"adding {page}.png to pdf")
             rlab_pdf.draw(drawing, pdf, 0, 0)
