@@ -2,10 +2,19 @@
 
 ![logo](https://raw.githubusercontent.com/ongyx/musdl/master/logo.jpg "musdl")
 
-# NOTE:
-_**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**_
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/musdl)](https://pypi.org/project/musdl)
+![PyPI - License](https://img.shields.io/pypi/l/musdl)
+![PyPI](https://img.shields.io/pypi/v/musdl)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/musdl)
+![Lines of code](https://img.shields.io/tokei/lines/github/ongyx/musdl)
 
-musdl (**mus**score **d**own**l**oader) is a Python script that I wrote to make downloading scores from Musescore easy.
+# NOTE:
+**The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
+
+musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written in Python.
+musdl can download scores as MP3, MIDI, MXL and PDF.
+PDFs are rendered from individual SVGs to A4 size using [svglib](https://pypi,org/project/svglib), guaranteeing the highest resolution available.
 
 It is meant to be used as a command-line tool, but can also be imported and used as a module:
 
@@ -19,7 +28,7 @@ data = my_score.download("mp3")  # download as mp3, returns as bytes
 ## Why?
 musdl was inspired by [musescore-downloader](https://github.com/Xmader/musescore-downloader), which is written in TypeScript. But, what if you wanted to run it without a web browser? That's why I made a Python equivalent.
 
-## **cough cough** takedown request something something **cough cough**
+## takedown request, et tu?
 Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issues/5) in the same repo.
 
 ## Requirements
@@ -51,10 +60,12 @@ If you want to download PDFs, you need to install the `pdf` extra:
 ## License
 MIT.
 
-## Todo
-- add multiprocessing support (for faster PDF downloads).
-
 ## Changelog
+
+### 2.3.0
+Better PDF page detection (now the exact number of pages are known at runtime).
+The attributes `.user`, `.id`, and `.pages` have been added to the `Score` class. (user and pages are self-explanatory, id is the score id.)
+Added support for multi-threaded downloading of PDF pages (specify with `-t`). Downloading (may) be faster.
 
 ### 2.2.2
 Fixed PDF scaling issue on Windows.
