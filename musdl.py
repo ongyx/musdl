@@ -26,7 +26,7 @@ except ImportError:
     _PDF = False
 
 __author__ = "Ong Yong Xin"
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
