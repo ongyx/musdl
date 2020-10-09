@@ -62,6 +62,9 @@ If you want to download PDFs, you need to install the `pdf` extra:
 ## License
 MIT.
 
+## Known Issues
+MXL download is broken (there is no direct url, like PDF).
+
 ## Changelog
 
 ### 2.3.0
