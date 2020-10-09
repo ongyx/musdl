@@ -16,6 +16,8 @@ musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written i
 musdl can download scores as MP3, MIDI, MXL and PDF.
 PDFs are rendered from individual SVGs to A4 size using [svglib](https://pypi,org/project/svglib), guaranteeing the highest resolution available.
 
+For [example](https://github.com/ongyx/musdl/blob/master/Gymnop%C3%A9die_No_1.pdf), Gymnopédie No. 1.
+
 It is meant to be used as a command-line tool, but can also be imported and used as a module:
 
 ```python
