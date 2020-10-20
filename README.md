@@ -12,6 +12,10 @@
 # NOTE:
 **The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
 
+# ;-;
+MuseScore's API has changed, so MIDI and MP3 downloads are no loger avaliable :(
+I'm trying to see how to get around this...
+
 musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written in Python.
 musdl can download scores as MP3, MIDI, MXL and PDF.
 PDFs are rendered from individual SVGs to A4 size using [svglib](https://pypi,org/project/svglib), guaranteeing the highest resolution available.
