@@ -9,6 +9,9 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/musdl)
 ![Lines of code](https://img.shields.io/tokei/lines/github/ongyx/musdl)
 
+## ;-;
+This repo is no longer in development because musescore-downloader now has a CLI. See [here](https://github.com/ongyx/musdl/issues/4) for more info. 
+
 ## NOTE
 
 **The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
