@@ -9,47 +9,46 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/musdl)
 ![Lines of code](https://img.shields.io/tokei/lines/github/ongyx/musdl)
 
-## ;-;
-This repo is no longer in development because musescore-downloader now has a CLI. See [here](https://github.com/ongyx/musdl/issues/4) for more info. 
-
 ## NOTE
 
 **The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
 
-musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written in Python (with a little help from [js2py](https://pypi.org/project/Js2Py/)).
-musdl can download scores as MP3, MIDI, MXL and PDF.
-PDFs are rendered from individual SVGs to A4 size using [svglib](https://pypi,org/project/svglib), guaranteeing the highest resolution available.
+musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written in Python.
+musdl can now only download scores as `.mscz` (use the [Musescore](https://musescore.org/) software to export to other formats).
 
-For [example](https://github.com/ongyx/musdl/blob/master/Gymnop%C3%A9die_No_1.pdf), Gymnopédie No. 1.
+The easiest way to download the score is through the CLI:
 
-It is meant to be used as a command-line tool, but can also be imported and used as a module:
+```text
+musdl (musescore url here)
+```
+
+But, it can also be imported and used as a module:
 
 ```python
-from musdl import Score
+from musdl import Score, OnlineScore
 
-my_score = Score(...)  # the Musescore url goes here
-data = my_score.download("mp3")  # download as mp3, returns as bytes
+my_score = OnlineScore("musescore_url")
+
+# Read the score's metadata,
+name = my_score["workTitle"]
+# or save the whole score...
+my_score.save_to("my_score.mscz")
+
+# ...and then load it again.
+my_score = Score.from_file("my_score.mscz")
 ```
 
 ## How it works
 
-I browserified [musescore-downloader](https://github.com/Xmader/musescore-downloader), which is written in TypeScript. This bundles the relavent parts into a single file that can be run by js2py.
+I just copied over the IPNS-specific constants and used them to download the score file from [Xmader](https://github.com/Xmader)'s [dataset](https://github.com/Xmader/musescore-dataset).
 
 Other approaches were considered:
 
-- Create a native Python interpreter just to decode the musescore js. (Will problably break with every API change.)
-- Use a headless browser with requests-html or Selenium. (Resource-heavy, not really cross-platform.)
+- Create a native Python interpreter just to decode the musescore js (like Js2py). (Will problably break with every API change.)
+- Use a headless JS browser with Selenium. (Resource-heavy, not really cross-platform.)
+- Run a JS engine like PyMiniRacer/PyQt5. (Better speed, but needs C extensions.)
 
-So I decided to roll with js2py because its pure-Python.
-The pipeline for creating the JS file looks like this:
-
-```text
-_musdl.js
-    -> tsify (TS to JS)
-    -> babelify (ES6 to ES5, beacause js2py translates ES6 to ES5 anyway)
-    -> browserify (bundle the whole thing)
-    -> musdl.js
-```
+So I decided to roll with the IPNS dataset.
 
 ## takedown request, et tu
 
@@ -60,22 +59,12 @@ Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issue
 - `requests` - Downloader.
 - `beautifulsoup4` - Powerful HTML parser.
 
-For downloading PDFs:
-
-- `reportlab` - Make PDFs.
-- `svglib` - Convert SVGs into Reportlab drawings.
-
 ## Hacking
-
-NOTE: Because you need to compile the JS file first, run `node scripts/build.js` to do so.
-Obviously, you need npm and nodejs.
 
 All my python projects now use [flit](https://pypi.org/project/flit) to build and publish.
 So you need to `python3 -m pip install flit` first.
 
 ```text
-npm install
-node scripts/build.js
 flit build
 ```
 
@@ -83,15 +72,15 @@ flit build
 
 `(python3 -m) pip install musdl`
 
-If you want to download PDFs, you need to install the `pdf` extra:
-
-`(python3 -m) pip install musdl[pdf]`
-
 ## License
 
 MIT.
 
 ## Changelog
+
+### 3.0.0
+
+Complete re-write of musdl to use IPNS instead of relying on MuseScore's API, which can break anytime.
 
 ### 2.3.0
 

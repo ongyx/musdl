@@ -19,11 +19,5 @@ requires = [
 ]
 requires-python = ">=3.6"
 
-[tool.flit.metadata.requires-extra]
-pdf = [
-    "svglib>=1.0.1",
-    "reportlab",
-]
-
 [tool.flit.scripts]
 musdl = "musdl:main"
