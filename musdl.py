@@ -5,6 +5,8 @@ import io
 import logging
 import pathlib
 import re
+import subprocess
+import tempfile
 import zipfile
 from datetime import datetime
 from typing import Any, Dict, IO, Union
@@ -14,7 +16,7 @@ import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -24,6 +26,9 @@ IPNS_KEY = "QmSdXtvzC8v8iTTZuj5cVmiugnzbR1QATYRcGix4bBsioP"
 IPNS_RS_URL = f"https://ipfs.io/api/v0/dag/resolve?arg=/ipns/{IPNS_KEY}"
 RADIX = 20
 INDEX_RADIX = 128
+
+# set for fast lookup
+EXPORT_FORMATS = frozenset(["pdf", "mscz", "mxl", "mid", "mp3", "flac", "ogg"])
 
 
 def _soup_from_str(content):
@@ -40,8 +45,9 @@ def _sanitize(filename):
 class Score:
     """A score stored on disk (as a .mscz file).
     Args:
-        buffer: A file-like object containing the score data.
-            It must be opened in 'rb' (read bytes) mode, and is *not* implicitly closed on calling .close().
+        buffer: The score data as bytes or a file-like object.
+            If it is a file-like object, it must be opened in 'rb' (read bytes) mode,
+            and is *not* implicitly closed on calling .close().
 
     Attributes:
         meta (dict): A map of metadata tags to their values.
@@ -66,8 +72,14 @@ class Score:
         scorexml (bs4.BeautifulSoup): The parsed score (from XML).
     """
 
-    def __init__(self, buffer: IO) -> None:
-        with zipfile.ZipFile(buffer) as zf:
+    def __init__(self, buffer: Union[bytes, IO]) -> None:
+        try:
+            buffer.seek(0)
+            self._buffer = io.BytesIO(buffer.read())
+        except AttributeError:
+            self._buffer = io.BytesIO(buffer)
+
+        with zipfile.ZipFile(self._buffer) as zf:
 
             container = _soup_from_str(zf.read("META-INF/container.xml"))
             # The 'correct' way to find the .mscx file
@@ -91,12 +103,71 @@ class Score:
     def __exit__(self, t, v, tb):
         self.close()
 
+    def as_mscz(self) -> bytes:
+        """
+        Get the raw mscz file.
+
+        Returns:
+            The .mscz file, as raw bytes.
+        """
+
+        return self._buffer.getvalue()
+
     def close(self):
         self.scorexml.decompose()
 
+    def export(self, fmt: str, path: Union[str, pathlib.Path]) -> pathlib.Path:
+        """Export this score to another format and save it.
+        The format must be one of ['pdf', 'mscz', 'mxl', 'mid', 'mp3', 'flac', 'ogg'].
+
+        Args:
+            fmt: The export format.
+            path: Where to save the export file to.
+                The path should not have an extension, because it will be replaced
+                by the correct extension for the export format.
+
+        Returns:
+            The path to the exported file (with correct extension).
+
+        Raises:
+            ValueError, if the format is invalid.
+        """
+
+        path = pathlib.Path(path).with_suffix(f".{fmt}")
+
+        if fmt not in EXPORT_FORMATS:
+            raise ValueError(f"invalid format {fmt}")
+
+        if fmt == "mscz":
+            # save as-is
+            path.write_bytes(self.as_mscz())
+
+        else:
+            # save to a tempfile because we have to export using musescore
+            with tempfile.NamedTemporaryFile(suffix=".mscz") as f:
+                f.write(self.as_mscz())
+
+                try:
+                    subprocess.run(
+                        ["mscore", f.name, "-o", path],
+                        check=True,
+                    )
+
+                except FileNotFoundError:
+                    _log.critical(
+                        "musescore is not installed yet (required for export)"
+                    )
+                    raise
+
+                except subprocess.CalledProcessError as e:
+                    _log.error(f"failed to export: {e}")
+                    raise
+
+        return path
+
     @staticmethod
     def from_file(path: Union[str, pathlib.Path]):
-        """Open a Score from an existing .mscz file.
+        """Open a score from an existing .mscz file.
 
         Args:
             path: The path to the file.
@@ -152,36 +223,14 @@ class OnlineScore(Score):
         _log.info("downloading .mscz file")
 
         with self.session.get(self.mscz_url) as response:
-            self._buffer = io.BytesIO(response.content)
-
-        super().__init__(self._buffer)
+            super().__init__(response.content)
 
         _log.info("downloaded .mscz file")
-
-    def as_mscz(self) -> bytes:
-        """
-        Get the raw mscz file.
-
-        Returns:
-            The .mscz file, as raw bytes.
-        """
-
-        return self._buffer.getvalue()
 
     def close(self):
         self.session.close()
         self._buffer.close()
         super().close()
-
-    def save_to(self, path: Union[str, pathlib.Path]) -> None:
-        """Save the .mscz file to path.
-
-        Args:
-            path: The path to save to.
-        """
-
-        with open(path, "wb") as f:
-            f.write(self.as_mscz())
 
 
 def main():
@@ -203,21 +252,29 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        help="filename to output to (if not specified, score name will be used instead)",
-        default=None,
+        help="directory to output score file to (default: %(default)s)",
+        default=".",
+    )
+
+    parser.add_argument(
+        "--format",
+        "-f",
+        help="export the mscz file to another format (default: %(default)s)",
+        choices=EXPORT_FORMATS,
+        default="mscz",
     )
 
     args = parser.parse_args()
 
     with OnlineScore(args.url) as score:
 
-        if args.output is not None:
-            filename = args.output
-        else:
-            filename = f"{_sanitize(score.meta['workTitle'])}.mscz"
+        filename = pathlib.Path(args.output) / f"{_sanitize(score.meta['workTitle'])}"
 
-        _log.info("saving to %s", filename)
-        score.save_to(filename)
+        _log.info("saving")
+
+        exported_filename = score.export(args.format, filename)
+
+        _log.info("saved to %s", exported_filename)
 
 
 if __name__ == "__main__":

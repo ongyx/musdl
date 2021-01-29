@@ -19,10 +19,20 @@ musdl can now only download scores as `.mscz` (use the [Musescore](https://muses
 The easiest way to download the score is through the CLI:
 
 ```text
-musdl (musescore url here)
+musdl (musescore url)
 ```
 
-But, it can also be imported and used as a module:
+To convert to another format, use `-f/--format`:
+
+```text
+# export as midi
+musdl -f mid (musescore url)
+```
+
+For a complete list of formats, run `musdl --help`.
+If you want to export in any format besides `mscz`, you need to [install](#install) musescore first.
+
+It can also be imported and used as a module:
 
 ```python
 from musdl import Score, OnlineScore
@@ -32,7 +42,7 @@ my_score = OnlineScore("musescore_url")
 # Read the score's metadata,
 name = my_score["workTitle"]
 # or save the whole score...
-my_score.save_to("my_score.mscz")
+my_score.export("mscz", "my_score.mscz")
 
 # ...and then load it again.
 my_score = Score.from_file("my_score.mscz")
@@ -72,11 +82,26 @@ flit build
 
 `(python3 -m) pip install musdl`
 
+Optionally, to export the score in other formats (midi, mp3, etc.) install musescore.
+musdl relies on its command-line tool `mscore` to export scores:
+
+```text
+# Linux
+sudo (package manager/snap) install musescore
+# Windows
+scoop bucket add extras  # add the extras bucket if you haven't
+scoop install musescore
+```
+
 ## License
 
 MIT.
 
 ## Changelog
+
+### 3.1.0
+
+Add export to other formats.
 
 ### 3.0.0
 
