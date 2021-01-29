@@ -9,14 +9,14 @@ import subprocess
 import tempfile
 import zipfile
 from datetime import datetime
-from typing import Any, Dict, IO, Union
+from typing import Any, Dict, Union
 from urllib.parse import urlparse
 
 import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.0"
+__version__ = "3.1.1"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -44,10 +44,10 @@ def _sanitize(filename):
 
 class Score:
     """A score stored on disk (as a .mscz file).
+
     Args:
-        buffer: The score data as bytes or a file-like object.
-            If it is a file-like object, it must be opened in 'rb' (read bytes) mode,
-            and is *not* implicitly closed on calling .close().
+        score_data: The score data as bytes.
+            It must be in the mscz format.
 
     Attributes:
         meta (dict): A map of metadata tags to their values.
@@ -72,12 +72,8 @@ class Score:
         scorexml (bs4.BeautifulSoup): The parsed score (from XML).
     """
 
-    def __init__(self, buffer: Union[bytes, IO]) -> None:
-        try:
-            buffer.seek(0)
-            self._buffer = io.BytesIO(buffer.read())
-        except AttributeError:
-            self._buffer = io.BytesIO(buffer)
+    def __init__(self, score_data: bytes) -> None:
+        self._buffer = io.BytesIO(score_data)
 
         with zipfile.ZipFile(self._buffer) as zf:
 
@@ -177,7 +173,7 @@ class Score:
         """
 
         with open(path, "rb") as f:
-            return Score(f)
+            return Score(f.read())
 
 
 class OnlineScore(Score):
