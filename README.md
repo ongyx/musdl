@@ -14,7 +14,6 @@
 **The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
 
 musdl (**mus**score **d**own**l**oader) is a downloader for Musescore, written in Python.
-musdl can now only download scores as `.mscz` (use the [Musescore](https://musescore.org/) software to export to other formats).
 
 The easiest way to download the score is through the CLI:
 
