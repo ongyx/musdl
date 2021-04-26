@@ -16,7 +16,7 @@ import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.1"
+__version__ = "3.1.2"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -205,12 +205,17 @@ class OnlineScore(Score):
 
         with self.session.get(mscz_cid_url) as res:
             data = res.json()
-            self.mscz_cid = data["Key"]
+            self.mscz_cid = data.get("Key")
 
             if not self.mscz_cid:
                 err_msg = data["Message"]
                 if "no link named" in err_msg:
-                    err_msg = "score not in dataset"
+                    err_msg = (
+                        "Score is not in dataset. "
+                        "Please file a bug report in the #dataset-bugs channel "
+                        "of the LibreScore Community Discord server: "
+                        "https://discord.gg/kTyx6nUjMv"
+                    )
                 raise RuntimeError(err_msg)
 
             self.mscz_url = f"https://ipfs.infura.io/ipfs/{self.mscz_cid}"
