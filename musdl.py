@@ -5,6 +5,7 @@ import io
 import logging
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -29,6 +30,8 @@ INDEX_RADIX = 128
 
 # set for fast lookup
 EXPORT_FORMATS = frozenset(["pdf", "mscz", "mxl", "mid", "mp3", "flac", "ogg"])
+
+MSCORE_EXE = shutil.which("musescore3") or shutil.which("musescore")
 
 
 def _soup_from_str(content):
@@ -134,30 +137,37 @@ class Score:
         if fmt not in EXPORT_FORMATS:
             raise ValueError(f"invalid format {fmt}")
 
+        temp = tempfile.NamedTemporaryFile(suffix=".mscz", delete=False)
+        temp_path = pathlib.Path(temp.name)
+
+        temp.write(self.as_mscz())
+
         if fmt == "mscz":
-            # save as-is
-            path.write_bytes(self.as_mscz())
+            temp.close()
+            # rename as-is
+            temp_path.rename(path)
 
         else:
+
+            if MSCORE_EXE is None:
+                raise RuntimeError(
+                    "musescore is not installed yet (required for export)"
+                )
+
             # save to a tempfile because we have to export using musescore
-            with tempfile.NamedTemporaryFile(suffix=".mscz") as f:
-                f.write(self.as_mscz())
+            try:
+                subprocess.run(
+                    [MSCORE_EXE, str(temp_path), "-o", str(path)],
+                    check=True,
+                )
 
-                try:
-                    subprocess.run(
-                        ["mscore", f.name, "-o", path],
-                        check=True,
-                    )
+            except subprocess.CalledProcessError as e:
+                _log.error(f"failed to export: {e.output}")
+                raise
 
-                except FileNotFoundError:
-                    _log.critical(
-                        "musescore is not installed yet (required for export)"
-                    )
-                    raise
-
-                except subprocess.CalledProcessError as e:
-                    _log.error(f"failed to export: {e}")
-                    raise
+            finally:
+                temp.close()
+                temp_path.unlink()
 
         return path
 
