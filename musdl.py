@@ -17,7 +17,7 @@ import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.2"
+__version__ = "3.1.3"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
