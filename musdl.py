@@ -17,7 +17,7 @@ import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.3"
+__version__ = "3.1.4"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -32,6 +32,14 @@ INDEX_RADIX = 128
 EXPORT_FORMATS = frozenset(["pdf", "mscz", "mxl", "mid", "mp3", "flac", "ogg"])
 
 MSCORE_EXE = shutil.which("musescore3") or shutil.which("musescore")
+
+# This maps Score metadata fields to their meta property (on the musescore webpage).
+META_MAP = {
+    "arranger": "musescore:author",
+    "composer": "musescore:composer",
+    "workTitle": "og:title",
+    "source": "og:url",
+}
 
 
 def _soup_from_str(content):
@@ -144,8 +152,10 @@ class Score:
 
         if fmt == "mscz":
             temp.close()
-            # rename as-is
-            temp_path.rename(path)
+            # renames only work on the same filesystem
+            # copy and then delete ensures that it will move across filesystems
+            # (shutil does this for us)
+            shutil.move(str(temp_path), str(path))
 
         else:
 
@@ -193,6 +203,7 @@ class OnlineScore(Score):
         url: The url to the score.
 
     Attributes:
+        url: See args.
         global_cid (str): The 'global key' used to access the mscz cid.
         mscz_cid (str): The 'mscz key' (specific to each score) used to access the mscz url.
         mscz_url (str): The url to the .mscz file.
@@ -200,8 +211,11 @@ class OnlineScore(Score):
     """
 
     def __init__(self, url: str) -> None:
-        self.id = int(urlparse(url).path.split("/")[-1])
+        self.url = url
+        self.id = int(urlparse(self.url).path.split("/")[-1])
         self.session = requests.Session()
+
+        self._soup = None
 
         _log.info("getting global/score cid (this might take a while)")
 
@@ -238,6 +252,17 @@ class OnlineScore(Score):
 
         _log.info("downloaded .mscz file")
 
+    def update_meta(self):
+        """Update the metadata in this score using the musescore webpage.
+        Note that this does not modify the dataset score itself: only the .meta attribute is updated.
+        """
+
+        if self._soup is None:
+            self._soup = _soup_from_str(self.session.get(self.url).text)
+
+        for field, prop in META_MAP.items():
+            self.meta[field] = self._soup.find("meta", property=prop)["content"]
+
     def close(self):
         self.session.close()
         self._buffer.close()
@@ -258,34 +283,71 @@ def main():
         version="%(prog)s v{}".format(__version__),
     )
 
-    parser.add_argument("url", help="the score url")
+    parser.add_argument("url", help="the score url", nargs="?", default=None)
 
     parser.add_argument(
-        "--output",
         "-o",
-        help="directory to output score file to (default: %(default)s)",
+        "--output",
+        help="directory to output score file(s) to (default: %(default)s)",
         default=".",
     )
 
     parser.add_argument(
-        "--format",
         "-f",
-        help="export the mscz file to another format (default: %(default)s)",
+        "--format",
+        help="export the mscz file(s) to another format (default: %(default)s)",
         choices=EXPORT_FORMATS,
         default="mscz",
     )
 
+    parser.add_argument(
+        "-d",
+        "--dont-update",
+        help="use the dataset score's workTitle as the filename (may be outdated or empty!)",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "-b",
+        "--batch",
+        help="read a score url from each line of a file and download it",
+    )
+
     args = parser.parse_args()
 
-    with OnlineScore(args.url) as score:
+    output = pathlib.Path(args.output)
 
-        filename = pathlib.Path(args.output) / f"{_sanitize(score.meta['workTitle'])}"
+    if (args.batch and args.url) or (not args.batch and not args.url):
+        _log.critical("Only one of url or --batch must be specified.")
+        return
 
-        _log.info("saving")
+    if args.batch:
+        # iterate over lines
+        urls = open(args.batch, "r")
+    else:
+        urls = [args.url]
 
-        exported_filename = score.export(args.format, filename)
+    for url in urls:
 
-        _log.info("saved to %s", exported_filename)
+        with OnlineScore(url) as score:
+
+            if not args.dont_update:
+                _log.info("updating metadata")
+
+                score.update_meta()
+
+            filename = output / f"{_sanitize(score.meta['workTitle'])}"
+
+            _log.info("saving")
+
+            exported_filename = score.export(args.format, filename)
+
+            _log.info("saved to %s", exported_filename)
+
+    try:
+        urls.close()
+    except AttributeError:
+        pass
 
 
 if __name__ == "__main__":
