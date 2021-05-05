@@ -17,7 +17,7 @@ import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.4"
+__version__ = "3.1.5"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -261,7 +261,11 @@ class OnlineScore(Score):
             self._soup = _soup_from_str(self.session.get(self.url).text)
 
         for field, prop in META_MAP.items():
-            self.meta[field] = self._soup.find("meta", property=prop)["content"]
+            value = self._soup.find("meta", property=prop)
+            if value is None:
+                _log.warning("failed to update metadata field %s", field)
+            else:
+                self.meta[field] = value["content"]
 
     def close(self):
         self.session.close()
