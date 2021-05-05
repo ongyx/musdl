@@ -47,6 +47,8 @@ my_score.export("mscz", "my_score.mscz")
 my_score = Score.from_file("my_score.mscz")
 ```
 
+For API documentation, see [here](API.md).
+
 ## How it works
 
 I just copied over the IPNS-specific constants and used them to download the score file from [Xmader](https://github.com/Xmader)'s [dataset](https://github.com/Xmader/musescore-dataset).
@@ -62,11 +64,6 @@ So I decided to roll with the IPNS dataset.
 ## takedown request, et tu
 
 Take a look at this [issue](https://github.com/Xmader/musescore-downloader/issues/5) in the same repo.
-
-## Requirements
-
-- `requests` - Downloader.
-- `beautifulsoup4` - Powerful HTML parser.
 
 ## Hacking
 

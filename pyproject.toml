@@ -21,3 +21,8 @@ requires-python = ">=3.6"
 
 [tool.flit.scripts]
 musdl = "musdl:main"
+
+[tool.flit.metadata.requires-extra]
+doc = [
+    "pydoc-markdown>=3.10.1"
+]

@@ -72,13 +72,13 @@ class Score:
             movementTitle
             poet
             workNumber
-            workTitle (str): Self-explainatory.
+            workTitle - str: Self-explainatory.
 
-            creationDate (datetime.datetime): When the score was created.
+            creationDate - datetime.datetime: When the score was created.
 
-            platform (str): Which OS the score was created on (i.e Microsoft Windows).
+            platform - str: Which OS the score was created on (i.e Microsoft Windows).
 
-            source (str): The URL of the score (if it was hosted online).
+            source - str: The URL of the score (if it was hosted online).
 
         scorexml (bs4.BeautifulSoup): The parsed score (from XML).
     """
