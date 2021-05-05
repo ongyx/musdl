@@ -1,6 +1,7 @@
 # Table of Contents
 
 * [musdl](#musdl)
+  * [Metadata](#musdl.Metadata)
   * [Score](#musdl.Score)
     * [as\_mscz](#musdl.Score.as_mscz)
     * [export](#musdl.Score.export)
@@ -12,6 +13,45 @@
 # musdl
 
 [mus]escore [d]own[l]oader, ported from TypeScript
+
+<a name="musdl.Metadata"></a>
+## Metadata Objects
+
+```python
+@dataclass
+class Metadata(Mapping)
+```
+
+A score's metadata.
+
+**Attributes**:
+
+  
+- `arranger` - Who arranged the score.
+  
+- `composer` - Who composed the score.
+  
+- `copyright` - The copyright statement.
+  
+- `creation_date` - When the score was created.
+  
+- `lyricist` - Who created the lyrics for the score.
+  
+- `movement_number` - Self-explainatory.
+  
+- `movement_title` - Self-explainatory.
+  
+- `platform` - Which OS the score was created on (i.e Microsoft Windows).
+  
+- `poet` - Who created the poem the score's lyrics is based on, if any.
+  
+- `source` - The URL of the score (if it was hosted online).
+  
+- `translator` - Who translated the lyrics of the score, if any.
+  
+- `work_number` - Self-explainatory.
+  
+- `work_title` - Self-explainatory.
 
 <a name="musdl.Score"></a>
 ## Score Objects
@@ -30,24 +70,8 @@ A score stored on disk (as a .mscz file).
 
 **Attributes**:
 
-- `meta` _dict_ - A map of metadata tags to their values.
-  Currently, the following tags are used:
-  
-  arranger
-  composer
-  copyright
-  lyricist
-  movementNumber
-  movementTitle
-  poet
-  workNumber
-  workTitle - str: Self-explainatory.
-  
-  creationDate - datetime.datetime: When the score was created.
-  
-  platform - str: Which OS the score was created on (i.e Microsoft Windows).
-  
-  source - str: The URL of the score (if it was hosted online).
+- `meta` _Metadata_ - A map of metadata tags to their values.
+  Attribute-like access is also supported.
   
 - `scorexml` _bs4.BeautifulSoup_ - The parsed score (from XML).
 

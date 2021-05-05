@@ -1,6 +1,8 @@
 # config: utf8
 """[mus]escore [d]own[l]oader, ported from TypeScript"""
 
+from __future__ import annotations
+
 import io
 import logging
 import pathlib
@@ -9,15 +11,17 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Union
+from typing import Optional, Union
 from urllib.parse import urlparse
 
 import bs4
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.5"
+__version__ = "3.1.6"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -53,6 +57,84 @@ def _sanitize(filename):
     ).strip("_")
 
 
+def _normalize(field):
+    return re.sub(r"([A-Z]){1}", lambda m: f"_{m.group(1).lower()}", field)
+
+
+@dataclass
+class Metadata(Mapping):
+    """A score's metadata.
+
+    Attributes:
+
+        arranger: Who arranged the score.
+
+        composer: Who composed the score.
+
+        copyright: The copyright statement.
+
+        creation_date: When the score was created.
+
+        lyricist: Who created the lyrics for the score.
+
+        movement_number: Self-explainatory.
+
+        movement_title: Self-explainatory.
+
+        platform: Which OS the score was created on (i.e Microsoft Windows).
+
+        poet: Who created the poem the score's lyrics is based on, if any.
+
+        source: The URL of the score (if it was hosted online).
+
+        translator: Who translated the lyrics of the score, if any.
+
+        work_number: Self-explainatory.
+
+        work_title: Self-explainatory.
+    """
+
+    arranger: str
+    composer: str
+    copyright: str
+    creation_date: Optional[datetime.datetime]
+    lyricist: str
+    movement_number: str
+    movement_title: str
+    platform: str
+    poet: str
+    source: str
+    translator: str
+    work_number: str
+    work_title: str
+
+    def __getitem__(self, field):
+        return self.__dict__[_normalize(field)]
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
+    @classmethod
+    def from_xml(cls, scorexml: bs4.Tag) -> Metadata:
+        metadata = {
+            _normalize(tag["name"]): tag.text for tag in scorexml.find_all("metatag")
+        }
+
+        created = metadata["creation_date"]
+
+        try:
+            created_date = datetime.strptime(created, "%Y-%m-%d")
+        except ValueError:
+            created_date = None
+
+        metadata["creation_date"] = created_date
+
+        return cls(**metadata)
+
+
 class Score:
     """A score stored on disk (as a .mscz file).
 
@@ -61,24 +143,8 @@ class Score:
             It must be in the mscz format.
 
     Attributes:
-        meta (dict): A map of metadata tags to their values.
-            Currently, the following tags are used:
-
-            arranger
-            composer
-            copyright
-            lyricist
-            movementNumber
-            movementTitle
-            poet
-            workNumber
-            workTitle - str: Self-explainatory.
-
-            creationDate - datetime.datetime: When the score was created.
-
-            platform - str: Which OS the score was created on (i.e Microsoft Windows).
-
-            source - str: The URL of the score (if it was hosted online).
+        meta (Metadata): A map of metadata tags to their values.
+            Attribute-like access is also supported.
 
         scorexml (bs4.BeautifulSoup): The parsed score (from XML).
     """
@@ -94,15 +160,7 @@ class Score:
 
             self.scorexml = _soup_from_str(zf.read(mscx_path))
 
-        self.meta: Dict[str, Any] = {}
-
-        for tag in self.scorexml.find_all("metatag"):
-            key = tag["name"]
-            value = tag.text
-            if key == "creationDate":
-                value = datetime.strptime(value, "%Y-%m-%d")
-
-            self.meta[key] = value
+        self.meta = Metadata.from_xml(self.scorexml)
 
     def __enter__(self):
         return self
@@ -265,7 +323,9 @@ class OnlineScore(Score):
             if value is None:
                 _log.warning("failed to update metadata field %s", field)
             else:
-                self.meta[field] = value["content"]
+                # setting of metadata fields after creation is not allowed (not a MutableMapping).
+                # uUless you go through the instance dict.
+                self.meta.__dict__[field] = value["content"]
 
     def close(self):
         self.session.close()
@@ -340,7 +400,7 @@ def main():
 
                 score.update_meta()
 
-            filename = output / f"{_sanitize(score.meta['workTitle'])}"
+            filename = output / f"{_sanitize(score.meta.work_title)}"
 
             _log.info("saving")
 
