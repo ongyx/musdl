@@ -17,11 +17,11 @@ from datetime import datetime
 from typing import Optional, Union
 from urllib.parse import urlparse
 
-import bs4
+import bs4  # type: ignore
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.6"
+__version__ = "3.1.7"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
@@ -61,6 +61,10 @@ def _normalize(field):
     return re.sub(r"([A-Z]){1}", lambda m: f"_{m.group(1).lower()}", field)
 
 
+def _get_id(url):
+    return int(urlparse(url).path.split("/")[-1])
+
+
 @dataclass
 class Metadata(Mapping):
     """A score's metadata.
@@ -97,7 +101,7 @@ class Metadata(Mapping):
     arranger: str
     composer: str
     copyright: str
-    creation_date: Optional[datetime.datetime]
+    creation_date: Optional[datetime]
     lyricist: str
     movement_number: str
     movement_title: str
@@ -124,6 +128,8 @@ class Metadata(Mapping):
         }
 
         created = metadata["creation_date"]
+
+        created_date: Optional[datetime]
 
         try:
             created_date = datetime.strptime(created, "%Y-%m-%d")
@@ -270,10 +276,11 @@ class OnlineScore(Score):
 
     def __init__(self, url: str) -> None:
         self.url = url
-        self.id = int(urlparse(self.url).path.split("/")[-1])
         self.session = requests.Session()
 
-        self._soup = None
+        self._soup = _soup_from_str(self.session.get(self.url).text)
+
+        self.id = _get_id(self._soup.find("meta", property="al:ios:url")["content"])
 
         _log.info("getting global/score cid (this might take a while)")
 
@@ -314,9 +321,6 @@ class OnlineScore(Score):
         """Update the metadata in this score using the musescore webpage.
         Note that this does not modify the dataset score itself: only the .meta attribute is updated.
         """
-
-        if self._soup is None:
-            self._soup = _soup_from_str(self.session.get(self.url).text)
 
         for field, prop in META_MAP.items():
             value = self._soup.find("meta", property=prop)
