@@ -21,16 +21,16 @@ import bs4  # type: ignore
 import requests
 
 __author__ = "Ong Yong Xin"
-__version__ = "3.1.7"
+__version__ = "3.1.8"
 __copyright__ = "(c) 2020 Ong Yong Xin"
 __license__ = "MIT"
 
 _log = logging.getLogger("musdl")
 
-IPNS_KEY = "QmSdXtvzC8v8iTTZuj5cVmiugnzbR1QATYRcGix4bBsioP"
-IPNS_RS_URL = f"https://ipfs.io/api/v0/dag/resolve?arg=/ipns/{IPNS_KEY}"
+# IPFS constants
+IPFS_KEY = "QmSdXtvzC8v8iTTZuj5cVmiugnzbR1QATYRcGix4bBsioP"
 RADIX = 20
-INDEX_RADIX = 128
+INDEX_RADIX = 32
 
 # set for fast lookup
 EXPORT_FORMATS = frozenset(["pdf", "mscz", "mxl", "mid", "mp3", "flac", "ogg"])
@@ -41,7 +41,7 @@ MSCORE_EXE = shutil.which("musescore3") or shutil.which("musescore")
 META_MAP = {
     "arranger": "musescore:author",
     "composer": "musescore:composer",
-    "workTitle": "og:title",
+    "work_title": "og:title",
     "source": "og:url",
 }
 
@@ -98,19 +98,19 @@ class Metadata(Mapping):
         work_title: Self-explainatory.
     """
 
-    arranger: str
-    composer: str
-    copyright: str
-    creation_date: Optional[datetime]
-    lyricist: str
-    movement_number: str
-    movement_title: str
-    platform: str
-    poet: str
-    source: str
-    translator: str
-    work_number: str
-    work_title: str
+    arranger: str = ""
+    composer: str = ""
+    copyright: str = ""
+    creation_date: Optional[datetime] = datetime.utcfromtimestamp(0)
+    lyricist: str = ""
+    movement_number: str = ""
+    movement_title: str = ""
+    platform: str = ""
+    poet: str = ""
+    source: str = ""
+    translator: str = ""
+    work_number: str = ""
+    work_title: str = ""
 
     def __getitem__(self, field):
         return self.__dict__[_normalize(field)]
@@ -145,12 +145,14 @@ class Score:
     """A score stored on disk (as a .mscz file).
 
     Args:
+        filename: The .mscx filename of the score.
         score_data: The score data as bytes.
             It must be in the mscz format.
 
     Attributes:
         meta (Metadata): A map of metadata tags to their values.
             Attribute-like access is also supported.
+            If the score has no metadata, this is None.
 
         scorexml (bs4.BeautifulSoup): The parsed score (from XML).
     """
@@ -164,9 +166,20 @@ class Score:
             # The 'correct' way to find the .mscx file
             mscx_path = container.rootfiles.rootfile["full-path"]
 
+            files = set(zf.namelist())
+
+            # The .mscx file may have a utf8 filename decoded in cp437, so try to detect this.
+            if mscx_path not in files:
+                mscx_path = mscx_path.encode("utf8").decode("cp437")
+
             self.scorexml = _soup_from_str(zf.read(mscx_path))
 
-        self.meta = Metadata.from_xml(self.scorexml)
+        self.filename = mscx_path.split("/")[-1].strip(".mscx")
+
+        try:
+            self.meta = Metadata.from_xml(self.scorexml)
+        except (KeyError, ValueError):
+            self.meta = Metadata()
 
     def __enter__(self):
         return self
@@ -265,17 +278,29 @@ class OnlineScore(Score):
 
     Args:
         url: The url to the score.
+        mirror: The IPFS mirror to use.
+            Defaults to 'ipfs.io'.
 
     Attributes:
         url: See args.
+        mirror: See args.
         global_cid (str): The 'global key' used to access the mscz cid.
         mscz_cid (str): The 'mscz key' (specific to each score) used to access the mscz url.
         mscz_url (str): The url to the .mscz file.
         session (requests.Session): The session used to get the CID, as well as the .mscz file.
     """
 
-    def __init__(self, url: str) -> None:
+    # Newer scores usually show up faster on ipfs.io than ipfs.infura.io.
+    IPFS_MIRROR = "https://ipfs.io"
+
+    def __init__(self, url: str, mirror: Optional[str] = None) -> None:
         self.url = url
+
+        if mirror is None:
+            self.mirror = self.IPFS_MIRROR
+        else:
+            self.mirror = mirror
+
         self.session = requests.Session()
 
         self._soup = _soup_from_str(self.session.get(self.url).text)
@@ -284,30 +309,9 @@ class OnlineScore(Score):
 
         _log.info("getting global/score cid (this might take a while)")
 
-        with self.session.get(IPNS_RS_URL) as res:
-            self.global_cid = res.json()["Cid"]["/"]
-
-        mscz_cid_url = (
-            "https://ipfs.infura.io:5001/api/v0/block/stat?arg="
-            f"/ipfs/{self.global_cid}/{self.id % RADIX}/{self.id}.mscz"
-        )
-
-        with self.session.get(mscz_cid_url) as res:
-            data = res.json()
-            self.mscz_cid = data.get("Key")
-
-            if not self.mscz_cid:
-                err_msg = data["Message"]
-                if "no link named" in err_msg:
-                    err_msg = (
-                        "Score is not in dataset. "
-                        "Please file a bug report in the #dataset-bugs channel "
-                        "of the LibreScore Community Discord server: "
-                        "https://discord.gg/kTyx6nUjMv"
-                    )
-                raise RuntimeError(err_msg)
-
-            self.mscz_url = f"https://ipfs.infura.io/ipfs/{self.mscz_cid}"
+        self.global_cid = self._resolve_global_cid()
+        self.mscz_cid = self._resolve_mscz_cid()
+        self.mscz_url = f"{self.mirror}/ipfs/{self.mscz_cid}"
 
         _log.info("OK (cid is <%s>, mscz cid is <%s>)", self.global_cid, self.mscz_cid)
         _log.info("downloading .mscz file")
@@ -316,6 +320,35 @@ class OnlineScore(Score):
             super().__init__(response.content)
 
         _log.info("downloaded .mscz file")
+
+    def _resolve_mscz_cid(self):
+        mscz_cid_url = (
+            f"{self.mirror}/api/v0/block/stat?arg="
+            f"/ipfs/{self.global_cid}/{self.id % RADIX}/{self.id}.mscz"
+        )
+
+        with self.session.get(mscz_cid_url) as res:
+            data = res.json()
+            mscz_cid = data.get("Key")
+
+            if not mscz_cid:
+                err_msg = data["Message"]
+                if "no link named" in err_msg:
+                    err_msg = (
+                        "Score is not in dataset. "
+                        "Please send the score url in the #dataset-bugs channel "
+                        "of the LibreScore Community Discord server: "
+                        "https://discord.gg/kTyx6nUjMv"
+                    )
+                raise RuntimeError(err_msg)
+
+        return mscz_cid
+
+    def _resolve_global_cid(self):
+        url = f"{self.mirror}/api/v0/dag/resolve?arg=/ipns/{IPFS_KEY}"
+
+        with self.session.get(url) as res:
+            return res.json()["Cid"]["/"]
 
     def update_meta(self):
         """Update the metadata in this score using the musescore webpage.
@@ -328,7 +361,7 @@ class OnlineScore(Score):
                 _log.warning("failed to update metadata field %s", field)
             else:
                 # setting of metadata fields after creation is not allowed (not a MutableMapping).
-                # uUless you go through the instance dict.
+                # unless you go through the instance dict.
                 self.meta.__dict__[field] = value["content"]
 
     def close(self):
@@ -381,6 +414,12 @@ def main():
         help="read a score url from each line of a file and download it",
     )
 
+    parser.add_argument(
+        "-m",
+        "--mirror",
+        help="use an alternate IPFS mirror (newer scores may not appear in the mirror's dataset), defaults to https://ipfs.io",
+    )
+
     args = parser.parse_args()
 
     output = pathlib.Path(args.output)
@@ -397,18 +436,21 @@ def main():
 
     for url in urls:
 
-        with OnlineScore(url) as score:
+        with OnlineScore(url, mirror=args.mirror) as score:
 
             if not args.dont_update:
                 _log.info("updating metadata")
 
                 score.update_meta()
 
-            filename = output / f"{_sanitize(score.meta.work_title)}"
+            filename = _sanitize(score.meta.work_title)
+            if not filename:
+                _log.warning("work_title is blank, falling back to mscx filename")
+                filename = _sanitize(score.filename)
 
             _log.info("saving")
 
-            exported_filename = score.export(args.format, filename)
+            exported_filename = score.export(args.format, output / filename)
 
             _log.info("saved to %s", exported_filename)
 
