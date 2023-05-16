@@ -9,6 +9,10 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/musdl)
 ![Lines of code](https://img.shields.io/tokei/lines/github/ongyx/musdl)
 
+## Deprecation Notice
+
+musdl is no longer maintained. Please consider using [Librescore] instead.
+
 ## NOTE
 
 **The author of musdl does NOT condone piracy in any way, and is not responsible for anything that happens as a result of piracy arising from the use of musdl.**
@@ -92,3 +96,5 @@ scoop install musescore
 ## License
 
 MIT.
+
+[Librescore]: https://github.com/LibreScore/dl-librescore
